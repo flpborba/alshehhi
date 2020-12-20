@@ -1,0 +1,7 @@
+name: alshehhi
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - black
+  - pytest
