@@ -4,4 +4,7 @@ channels:
   - defaults
 dependencies:
   - black
+  - more-itertools
+  - pycryptodome
   - pytest
+  - sage
