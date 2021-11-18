@@ -162,16 +162,14 @@ class Dec(Cipher):
             If decryption fails.
         """
         received_word = decode(ciphertext, self._codeword_space())
-
         codeword = self._key.c().decode_to_code(received_word * self._key.p())
-        message = encode(self._key.c().unencode(codeword) * self._key.s())
 
         error_vector = received_word + codeword * self._key.p().inverse()
-
         error = encode(error_vector)
-        error_hash = self._xof(error, len(message))
 
-        extended_plaintext = strxor(message, error_hash)
+        message = encode(self._key.c().unencode(codeword) * self._key.s())
+
+        extended_plaintext = strxor(message, self._xof(error, len(message)))
         plaintext, verifier_hash = self._extract_hash(extended_plaintext)
 
         hash_verified = verifier_hash == self._hash(error + plaintext)

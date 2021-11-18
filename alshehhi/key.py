@@ -354,7 +354,8 @@ def import_secret_der(data):
     m, n, k, delta = DerSequence().decode(parameters)
 
     extension_field = GF(2 ** m)
-    points = decode_elem_list(key[0], extension_field)
+    generator_vector = decode(key[0], VectorSpace(extension_field, n))
+    points = generator_vector.list()
 
     c = GabidulinCode(extension_field, n, k, evaluation_points=points)
     s = decode(key[1], MatrixSpace(extension_field, k))
