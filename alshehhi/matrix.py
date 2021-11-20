@@ -67,7 +67,7 @@ def random_invertible_subpace_matrix(field, subspace_dimension, order):
 
     while m.rank() != order:
         linear_map = _random_linear_map(subspace, space)
-        m = subfield_matrix.apply_map(lambda e: field(linear_map(vector(e))))
+        m = subfield_matrix.apply_map(lambda e: field(vector(e) * linear_map))
 
     return m
 
@@ -103,6 +103,25 @@ def random_rank_vector(vector_space, rank):
     return from_matrix_representation(m, field)
 
 
+def ground_field_extension(m):
+    """Convert a matrix over a finite extension of a finite field to a matrix
+    over its ground field.
+
+    Each element in the original matrix is converted to a row vector in the
+    resulting matrix.
+
+    Parameters
+    ----------
+    m : Matrix
+        Matrix over a finite extension of a finite field.
+
+    Returns
+    -------
+    A matrix over the ground field of `m`.
+    """
+    return matrix(vector(e) for e in m.list())
+
+
 def _random_linear_map(v, w):
     """Create a random linear map between two vector spaces over GF(2).
 
@@ -120,4 +139,4 @@ def _random_linear_map(v, w):
     matrix_space = MatrixSpace(GF(2), v.degree(), w.degree())
     m = random_echelonizable_matrix(matrix_space, v.degree(), max_tries=None)
 
-    return m.linear_combination_of_rows
+    return m.echelon_form()
