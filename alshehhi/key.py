@@ -20,10 +20,12 @@ from sage.coding.gabidulin_code import GabidulinCode
 from sage.matrix.matrix_space import MatrixSpace
 from sage.matrix.special import identity_matrix
 from sage.modules.free_module import VectorSpace
+from sage.modules.free_module_element import vector
 from sage.rings.finite_rings.finite_field_constructor import GF
 
 from alshehhi.io import decode, decode_elem_list, encode, encode_elem_list
 from alshehhi.matrix import (
+    ground_field_extension,
     random_invertible_matrix,
     random_invertible_subpace_matrix,
     random_rank_vector,
@@ -129,10 +131,11 @@ class SecretKey(Key):
         The ASN.1 structure of a secret key is the following:
 
             PrivateKey ::= SEQUENCE {
-                generator       OCTET STRING
-                rowScrambler    OCTET STRING
-                columnScrambler OCTET STRING
-                parameters      Parameters
+                generator              OCTET STRING
+                rowScrambler           OCTET STRING
+                columnScramblerBasis   OCTET STRING
+                columnScramblerSupport OCTET STRING
+                parameters             Parameters
             }
 
             Parameters := SEQUENCE {
@@ -153,10 +156,16 @@ class SecretKey(Key):
             self._d,
         ]
 
+        subfield = GF(2 ** self._d)
+
+        basis = ground_field_extension(self.p()).row_space().basis_matrix()
+        subfield_matrix = self.p().apply_map(lambda e: subfield(basis.solve_left(vector(e))))
+
         sequence = [
             DerOctetString(encode_elem_list(self.c().evaluation_points())),
             DerOctetString(encode(self.s())),
-            DerOctetString(encode(self.p())),
+            DerOctetString(encode(basis)),
+            DerOctetString(encode(subfield_matrix)),
             DerSequence(parameters),
         ]
 
@@ -354,11 +363,20 @@ def import_secret_der(data):
     m, n, k, delta = DerSequence().decode(parameters)
 
     extension_field = GF(2 ** m)
-    points = decode_elem_list(key[0], extension_field)
 
+    points = decode_elem_list(key[0], extension_field)
     c = GabidulinCode(extension_field, n, k, evaluation_points=points)
+
     s = decode(key[1], MatrixSpace(extension_field, k))
-    p = decode(key[2], MatrixSpace(extension_field, n))
+
+    subfield = GF(2 ** delta)
+    basis_space = MatrixSpace(GF(2), delta, m)
+    support_space = MatrixSpace(subfield, n)
+
+    basis = decode(key[2], basis_space)
+    subfield_matrix = decode(key[3], support_space)
+
+    p = subfield_matrix.apply_map(lambda e: extension_field(vector(e) * basis))
 
     return SecretKey(c, s, p, delta)
 

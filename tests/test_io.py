@@ -1,5 +1,5 @@
 import sage.all  # noqa: F401 (required by sage)
-from pytest import mark, raises
+from pytest import mark
 from sage.rings.finite_rings.finite_field_constructor import GF
 
 from alshehhi.io import (
@@ -100,7 +100,7 @@ def test_decode_elem(field, data, coefficients):
         (
             GF(2),
             [0, 0, 1, 0, 1, 0, 0],
-            b"\x00\x00\x01\x00\x01\x00\x00",
+            b"\x14",
         ),
         (
             GF(2 ** 11),
@@ -114,31 +114,12 @@ def test_decode_elem(field, data, coefficients):
                 [0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1],
                 [1, 0, 1, 1, 1, 0, 0, 1, 1],
             ],
-            b"\x03\x92\x05\x68\x01\x9D",
+            b"\x00\xE4\xAB\x41\x9D",
         ),
     ],
 )
-def test_encode_list_same_field(field, coefficients, data):
+def test_encode_list(field, coefficients, data):
     elems = [field(item) for item in coefficients]
-    assert encode_elem_list(elems) == data
-
-
-@mark.parametrize(
-    "field_0, field_1, coefficients, data",
-    [
-        (
-            GF(2 ** 5),
-            GF(2 ** 14),
-            [
-                [0, 0, 1],
-                [1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1],
-            ],
-            b"\x04\x19\x61",
-        ),
-    ],
-)
-def test_encode_list_different_fields(field_0, field_1, coefficients, data):
-    elems = [field_0(coefficients[0]), field_1(coefficients[1])]
     assert encode_elem_list(elems) == data
 
 
@@ -152,8 +133,8 @@ def test_encode_list_different_fields(field_0, field_1, coefficients, data):
         ),
         (
             GF(2),
-            b"\x00\x00\x01\x00\x01\x00\x00",
-            [0, 0, 1, 0, 1, 0, 0],
+            b"\x14",
+            [0, 0, 0, 1, 0, 1, 0, 0],
         ),
         (
             GF(2 ** 11),
@@ -162,7 +143,7 @@ def test_encode_list_different_fields(field_0, field_1, coefficients, data):
         ),
         (
             GF(2 ** 11),
-            b"\x03\x92\x05\x68\x01\x9D",
+            b"\x00\xE4\xAB\x41\x9D",
             [
                 [0, 1, 0, 0, 1, 0, 0, 1, 1, 1],
                 [0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1],
@@ -174,17 +155,3 @@ def test_encode_list_different_fields(field_0, field_1, coefficients, data):
 def test_decode_list(field, coefficients, data):
     elems = [field(item) for item in coefficients]
     assert decode_elem_list(data, field) == elems
-
-
-@mark.parametrize(
-    "field, data",
-    [
-        (
-            GF(2 ** 14),
-            b"\x04\x19\x61",
-        ),
-    ],
-)
-def test_decode_list_insufficient_bytes(field, data):
-    with raises(Exception):
-        decode_elem_list(data, field)
